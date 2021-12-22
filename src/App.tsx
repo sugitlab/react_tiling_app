@@ -1,10 +1,16 @@
+import { initial } from "lodash";
+import React from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Mosaic, MosaicWindow } from "react-mosaic-component";
+import {
+  Mosaic,
+  MosaicWindow,
+  MosaicNode,
+  MosaicContext,
+} from "react-mosaic-component";
 import "react-mosaic-component/react-mosaic-component.css";
-import "./App.css";
 
-export type ViewId = "a" | "b" | "c" | "new";
+type ViewId = "a" | "b" | "c" | "new";
 
 const TITLE_MAP: Record<ViewId, string> = {
   a: "Left Window",
@@ -13,7 +19,24 @@ const TITLE_MAP: Record<ViewId, string> = {
   new: "New Window",
 };
 
-const Mosaic2 = () => {
+const initialNode: MosaicNode<ViewId> = {
+  direction: "row",
+  first: "a",
+  second: {
+    direction: "column",
+    first: "b",
+    second: "c",
+  },
+};
+
+const secondNode: MosaicNode<ViewId> = {
+  direction: "row",
+  first: "a",
+  second: "b",
+};
+
+const TilingWindow = () => {
+  const [node, setNode] = React.useState<MosaicNode<ViewId>>(initialNode);
   return (
     <DndProvider backend={HTML5Backend}>
       <Mosaic<ViewId>
@@ -22,56 +45,54 @@ const Mosaic2 = () => {
             path={path}
             createNode={() => "new"}
             title={TITLE_MAP[id]}
+            toolbarControls={
+              <MosaicContext.Consumer>
+                {(context) => {
+                  return (
+                    <>
+                      <button onClick={() => context.mosaicActions.hide(path)}>
+                        hide
+                      </button>
+                      <button
+                        onClick={() => context.mosaicActions.remove(path)}
+                      >
+                        remove
+                      </button>
+                      <button
+                        onClick={() => context.mosaicActions.expand(path, 100)}
+                      >
+                        expand
+                      </button>
+                      <button
+                        onClick={() => context.mosaicActions.expand(path, 50)}
+                      >
+                        half
+                      </button>
+                    </>
+                  );
+                }}
+              </MosaicContext.Consumer>
+            }
           >
-            <h1>{TITLE_MAP[id]}</h1>
+            <h1>{path}</h1>
           </MosaicWindow>
         )}
-        initialValue={{
-          direction: "row",
-          first: "a",
-          second: {
-            direction: "column",
-            first: "b",
-            second: "c",
-          },
-        }}
+        initialValue={node}
+        onChange={(node) =>
+          console.log(
+            "save this object to keep your last layout even if the user restart app",
+            node
+          )
+        }
       />
-    </DndProvider>
-  );
-};
-
-const ELEMENT_MAP: { [viewId: string]: JSX.Element } = {
-  a: <div>Left Window</div>,
-  b: <div>Top Right Window</div>,
-  c: <div>Bottom Right Window</div>,
-};
-
-const Mosaic1 = () => {
-  return (
-    <DndProvider backend={HTML5Backend}>
-      <div id="app">
-        <Mosaic<string>
-          renderTile={(id) => ELEMENT_MAP[id]}
-          initialValue={{
-            direction: "row",
-            first: "a",
-            second: {
-              direction: "column",
-              first: "b",
-              second: "c",
-            },
-            splitPercentage: 40,
-          }}
-        />
-      </div>
     </DndProvider>
   );
 };
 
 const App = () => {
   return (
-    <div style={{ height: "800px" }}>
-      <Mosaic2 />
+    <div style={{ height: "100vh" }}>
+      <TilingWindow />
     </div>
   );
 };
